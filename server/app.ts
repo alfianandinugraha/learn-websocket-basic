@@ -32,12 +32,6 @@ const db = lowdb(adapter);
 
 db.defaults({ messages: [] }).write();
 
-let listMessage: Message[] = [];
-
-const removeMessage = (id: number) => {
-  listMessage = listMessage.filter((data) => data.id != id);
-};
-
 const broadcastSocket = (payload: any) => {
   WebSocketServer.clients.forEach((client) => {
     client.readyState === WebSocket.OPEN && client.send(payload);
@@ -74,12 +68,10 @@ WebSocketServer.on("connection", (socket) => {
           socket.send(socketPayloadFactory("ERROR_SEND_MESSAGE"));
           break;
         }
-        listMessage.push(state.payload);
         db.get("messages").push(state.payload).write();
         broadcastListMessage();
         break;
       case "DELETE_MESSAGE":
-        removeMessage(state.payload.id);
         db.get("messages").remove({ id: state.payload.id }).write();
         broadcastListMessage();
         break;
