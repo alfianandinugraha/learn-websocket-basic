@@ -80,6 +80,7 @@ WebSocketServer.on("connection", (socket) => {
         break;
       case "DELETE_MESSAGE":
         removeMessage(state.payload.id);
+        db.get("messages").remove({ id: state.payload.id }).write();
         broadcastListMessage();
         break;
       case "SOMEONE_TYPING":
