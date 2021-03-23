@@ -1,8 +1,14 @@
 import WebSocket from "ws";
+import lowdb from "lowdb";
+import FileSync from "lowdb/adapters/FileSync";
 
 interface Message {
   id: number;
   body: string;
+}
+
+interface Database {
+  messages: Message[];
 }
 
 type StateTypes =
@@ -20,6 +26,11 @@ interface State<T> {
 }
 
 const WebSocketServer = new WebSocket.Server({ port: 8081 });
+
+const adapter = new FileSync<Database>("db.json");
+const db = lowdb(adapter);
+
+db.defaults({ messages: [] }).write();
 
 let listMessage: Message[] = [];
 
@@ -45,10 +56,14 @@ const socketPayloadFactory = (type: StateTypes, payload?: any) =>
   JSON.stringify({ type, payload: payload });
 
 const broadcastListMessage = () =>
-  broadcastSocket(socketPayloadFactory("SUCCESS_GET_MESSAGES", listMessage));
+  broadcastSocket(
+    socketPayloadFactory("SUCCESS_GET_MESSAGES", db.get("messages").value())
+  );
 
 WebSocketServer.on("connection", (socket) => {
-  socket.send(socketPayloadFactory("SUCCESS_GET_MESSAGES", listMessage));
+  socket.send(
+    socketPayloadFactory("SUCCESS_GET_MESSAGES", db.get("messages").value())
+  );
 
   socket.on("message", (payload: string) => {
     let state: State<any> = JSON.parse(payload);
@@ -60,6 +75,7 @@ WebSocketServer.on("connection", (socket) => {
           break;
         }
         listMessage.push(state.payload);
+        db.get("messages").push(state.payload).write();
         broadcastListMessage();
         break;
       case "DELETE_MESSAGE":
