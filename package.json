@@ -16,7 +16,7 @@
   },
   "scripts": {
     "client": "http-server -o client",
-    "server": "nodemon src/app.ts --ignore 'db.json'"
+    "server": "nodemon --exec ts-node -- server/app.ts"
   },
   "nodemonConfig": {
     "ignore": [
