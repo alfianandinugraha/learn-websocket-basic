@@ -1,0 +1,10 @@
+{
+  "name": "websocket-ws",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^2.0.7",
+    "typescript": "^4.2.3"
+  }
+}
