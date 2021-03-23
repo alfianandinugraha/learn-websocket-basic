@@ -94,6 +94,9 @@
 
         if (!value) return alert("Tidak boleh kosong");
 
+        /**
+         * mengirim data keserver
+         */
         ws.send(
           JSON.stringify({
             type: "SEND_MESSAGE",
@@ -105,6 +108,9 @@
         );
       });
 
+      /**
+       * berguna untuk mengecek apakah ada seseorang yang sedang mengetik
+       */
       const inputMessage = document.getElementById("input-message");
       inputMessage.addEventListener("focus", () => {
         ws.send(JSON.stringify({ type: "SOMEONE_TYPING" }));

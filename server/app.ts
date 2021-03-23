@@ -32,12 +32,18 @@ const db = lowdb(adapter);
 
 db.defaults({ messages: [] }).write();
 
+/**
+ * Mengirim broadcast kesemua koneksi, termasuk pengirim broadcast
+ */
 const broadcastSocket = (payload: any) => {
   WebSocketServer.clients.forEach((client) => {
     client.readyState === WebSocket.OPEN && client.send(payload);
   });
 };
 
+/**
+ * Mengirim broadcast kesemua koneksi, kecuali pengirim broadcast
+ */
 const broadcastSocketExclude = (payload: any, socket: WebSocket) => {
   WebSocketServer.clients.forEach((client) => {
     socket !== client &&
@@ -46,15 +52,24 @@ const broadcastSocketExclude = (payload: any, socket: WebSocket) => {
   });
 };
 
+/**
+ * parsing data sebelum dikirim ke clint, diubah menjadi JSON terlebih dahulu
+ */
 const socketPayloadFactory = (type: StateTypes, payload?: any) =>
   JSON.stringify({ type, payload: payload });
 
+/**
+ * broadcasting list pesan ke semua koneksi
+ */
 const broadcastListMessage = () =>
   broadcastSocket(
     socketPayloadFactory("SUCCESS_GET_MESSAGES", db.get("messages").value())
   );
 
 WebSocketServer.on("connection", (socket) => {
+  /**
+   * Ketika pertama kali konek, maka langsung dikirim data message
+   */
   socket.send(
     socketPayloadFactory("SUCCESS_GET_MESSAGES", db.get("messages").value())
   );
