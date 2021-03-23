@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <style></style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-12">
+          <form id="form-message">
+            <input
+              type="text"
+              class="form-control mb-3"
+              name="inputMessage"
+              id="input-message"
+            />
+            <button class="btn btn-primary" type="submit">Send message</button>
+          </form>
+        </div>
+      </div>
+      <div class="row d-none my-3" id="typing-status">
+        <div class="col-12">
+          <i>Someone typing...</i>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="list-group" id="list-message"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const ws = new WebSocket("ws://localhost:8081");
+      const typingStatusElement = document.getElementById("typing-status");
+
+      ws.addEventListener("message", (e) => {
+        const payload = JSON.parse(e.data);
+
+        if (payload.type === "SOMEONE_TYPING") {
+          typingStatusElement.classList.remove("d-none");
+          return;
+        }
+
+        if (payload.type === "SOMEONE_LEAVE_TYPING") {
+          typingStatusElement.classList.remove("d-block");
+          typingStatusElement.classList.add("d-none");
+          return;
+        }
+
+        if (payload.type === "SUCCESS_GET_MESSAGES") {
+          const messages = payload.payload;
+          const listGroupMessageElement = document.getElementById(
+            "list-message"
+          );
+          listGroupMessageElement.innerHTML = "";
+
+          messages.forEach((message) => {
+            const listItemElement = document.createElement("div");
+            listItemElement.className =
+              "list-group-item d-flex justify-content-between align-items-center";
+            listItemElement.innerHTML = `
+              <div>${message.body}</div>
+              <button class="btn btn-danger">Delete</button>
+            `;
+            listItemElement
+              .getElementsByClassName("btn-danger")[0]
+              .addEventListener("click", () => {
+                ws.send(
+                  JSON.stringify({
+                    type: "DELETE_MESSAGE",
+                    payload: message,
+                  })
+                );
+              });
+            listGroupMessageElement.append(listItemElement);
+          });
+        }
+      });
+
+      const form = document.getElementById("form-message");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = e.target.inputMessage.value;
+
+        if (!value) return alert("Tidak boleh kosong");
+
+        ws.send(
+          JSON.stringify({
+            type: "SEND_MESSAGE",
+            payload: {
+              id: Math.random(),
+              body: value,
+            },
+          })
+        );
+      });
+
+      const inputMessage = document.getElementById("input-message");
+      inputMessage.addEventListener("focus", () => {
+        ws.send(JSON.stringify({ type: "SOMEONE_TYPING" }));
+      });
+      inputMessage.addEventListener("focusout", () => {
+        ws.send(JSON.stringify({ type: "SOMEONE_LEAVE_TYPING" }));
+      });
+    </script>
+  </body>
+</html>
